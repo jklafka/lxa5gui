@@ -1,12 +1,11 @@
 import svgwrite
-import time
 import sys
-import crab_nebula_klafka
+import gui_crab_nebula
 
 ## rectangle class
 
 def main(font_size, input_file):
-	signatures = crab_nebula_klafka.main(input_file)
+	signatures = gui_crab_nebula.main(input_file)
 	point_dict = {} #maps each signature to a pair of points representing upper right and lower left
 	
 	location_counter = 0
