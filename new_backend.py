@@ -31,6 +31,7 @@ class data_box(object):
 				self.inner_boxes.sort(lambda x: x[0], reverse = reverse_tf)
 			elif crit == "robustness":
 				self.inner_boxes.sort(lambda x: x[2], reverse = reverse_tf)
+		return 
 
 
 	def filter(self, crit, level):
@@ -47,6 +48,7 @@ class data_box(object):
 			elif crit == "certain suffixes":
 				self.inner_boxes = [box for box in self.inner_boxes \
 					if suffix in box[0].inner_boxes[1][0] for suffix in level]
+		return
 
 		## filter by whether the signature contains certain suffixes
 
@@ -62,27 +64,39 @@ class data_box(object):
 """
 
 class graphics_box(object):
+	#LAYER_NUM = 0
+	## how to determine where to draw the box:
+	## potentially use inner box number times some class layer counter
 	"""
 	The actual graphical representation of a group of suffixes, a group of
 	stems or a group of smaller boxes. 
 	"""
 	def __init__(self, data_box, svg):
+		#graphics_box.LAYER_NUM += 1
+		#self.layer_num = graphics_box.LAYER_NUM
 		self._inner_boxes = []
-		self._svg
+		self._svg = svg
 		self.data_box = data_box
-		#self._draw_box(data_box.text, upper_left, box_size, svg)
-		#for inner_box in data_box.inner_boxes:
-		#	self._inner_boxes.append(graphics_box(inner_box[0], svg))
+		self.draw_box(upper_left, box_size, svg)
+		if self.data_box.inner_boxes != []:
+			for inner_box in data_box.inner_boxes:
+				self._inner_boxes.append(graphics_box(inner_box[0], svg))
+		else:
+			self.add(self.data_box.text, )
 
-	def draw_box(self, upper_left, box_size):
+
+	def draw_box(self, upper_left, box_size, svg):
 		self._svg.add(self._svg.rect(insert = upper_left,
                                    size = box_size,
                                    stroke_width = "5",
                                    stroke = "black",
                                    fill = "rgb(128,0,0)"))
+
+
 	def add_text(self, text, location):
 		self._svg.add(self._svg.text(text, \
 	                                   insert = location))
+		## add code to check whether the text will overfill the box
 
 	#def zoom(self, percentage):
 	## still have to implement
@@ -118,6 +132,21 @@ def make_sig_box(signature):
 
 def main(signatures_filename, font_size):
 	signatures = crab_nebula_klafka.main(signatures_filename) # dict maps suffixes to stems
+	outer_box = data_box("stack", None)
+	for sig in signatures:
+		outer_box.include_box(make_sig_box(sig))
+	for box_pair in outer_box.inner_boxes:
+		box_pair[1] = box_pair[0].text
+	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
+                            size = ("1000px", "1000px"))
+	for box in outer_box.inner_boxes:
+
+		if box[0].inner_boxes != []:
+
+if __name__ = "__main__":
+	main(sys.argv[1], sys.argv[2])
+
+# recursion
 	'''
 	suff_dict = {}
 	stem_dict = {}
@@ -136,16 +165,3 @@ def main(signatures_filename, font_size):
 	stem_sigs = crab_nebula_klafka.main("stems.txt")
 	#subprocess.call(["rm", "stems.txt"])
 	'''
-	outer_box = data_box("stack", None)
-	for sig in signatures:
-		outer_box.include_box(make_sig_box(sig))
-	for box_pair in outer_box.inner_boxes:
-		box_pair[1] = box_pair[0].text
-	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
-                            size = ("1000px", "1000px"))
-	for box in outer_box.inner_boxes:
-
-		if box[0].inner_boxes != []:
-
-if __name__ = "__main__":
-	main(sys.argv[1], sys.argv[2])
