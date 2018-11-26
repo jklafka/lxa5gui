@@ -3,6 +3,9 @@ import sys
 import crab_nebula_klafka
 import subprocess
 
+FONT_SIZE = 12
+
+
 class data_box(object):
 	'''
 	Abstract representation of each box. The boxes represent any 
@@ -26,11 +29,11 @@ class data_box(object):
 	def sort(self, crit, reverse_tf = False):
 		if self.my_type == "stack" and self.text is None: #is outer_box
 			if crit == "suffixes":
-				self.inner_boxes.sort(lambda x: x[1], reverse = reverse_tf)
+				self.inner_boxes.sort(lambda x: x[0].text[1], reverse = reverse_tf)
 			elif crit == "stems":
-				self.inner_boxes.sort(lambda x: x[0], reverse = reverse_tf)
+				self.inner_boxes.sort(lambda x: x[0].text[0], reverse = reverse_tf)
 			elif crit == "robustness":
-				self.inner_boxes.sort(lambda x: x[2], reverse = reverse_tf)
+				self.inner_boxes.sort(lambda x: x[0].text[2], reverse = reverse_tf)
 		return 
 
 
@@ -38,13 +41,13 @@ class data_box(object):
 		if self.my_type == "stack" and self.text is None: #is outer_box
 			if crit == "suffixes":
 				self.inner_boxes = [box for box in self.inner_boxes \
-					if box[1][1] >= level]
+					if box[0].text[1] >= level]
 			elif crit == "stems":
 				self.inner_boxes = [box for box in self.inner_boxes \
-					if box[1][0] >= level]
+					if box[0].text[0] >= level]
 			elif crit == "robustness":
 				self.inner_boxes = [box for box in self.inner_boxes \
-					if box[1][2] >= level]
+					if box[0].text[2] >= level]
 			elif crit == "certain suffixes":
 				self.inner_boxes = [box for box in self.inner_boxes \
 					if suffix in box[0].inner_boxes[1][0] for suffix in level]
@@ -64,29 +67,28 @@ class data_box(object):
 """
 
 class graphics_box(object):
-	#LAYER_NUM = 0
-	## how to determine where to draw the box:
-	## potentially use inner box number times some class layer counter
 	"""
 	The actual graphical representation of a group of suffixes, a group of
 	stems or a group of smaller boxes. 
 	"""
-	def __init__(self, data_box, svg):
+	def __init__(self, data_box, svg, upper_left, box_size):
 		#graphics_box.LAYER_NUM += 1
 		#self.layer_num = graphics_box.LAYER_NUM
 		self._inner_boxes = []
 		self._svg = svg
 		self.data_box = data_box
-		self.draw_box(upper_left, box_size, svg)
+		self.draw_box(self._svg, upper_left, box_size)
 		if self.data_box.inner_boxes != []:
 			for inner_box in data_box.inner_boxes:
-				self._inner_boxes.append(graphics_box(inner_box[0], svg))
+				self._inner_boxes.append(graphics_box(inner_box[0], svg, \
+					(upper_left[0] + FONT_SIZE, upper_left[1] + FONT_SIZE), \
+					(box_size[0] - FONT_SIZE, box_size[1] - FONT_SIZE)))
 		else:
-			self.add(self.data_box.text, )
+			self.add_text(self.data_box.text, (upper_left[0] + box_size[0] / 2, ))
 
 
-	def draw_box(self, upper_left, box_size, svg):
-		self._svg.add(self._svg.rect(insert = upper_left,
+	def draw_box(self, svg, upper_left, box_size): ##make sure the syntax is right for this
+		svg.add(svg.rect(insert = str(upper_left[0]) + "px",
                                    size = box_size,
                                    stroke_width = "5",
                                    stroke = "black",
@@ -130,21 +132,25 @@ def make_sig_box(signature):
 	return sig_box
 
 
-def main(signatures_filename, font_size):
+def main(signatures_filename):
 	signatures = crab_nebula_klafka.main(signatures_filename) # dict maps suffixes to stems
 	outer_box = data_box("stack", None)
+	outer_box.text = 0
 	for sig in signatures:
 		outer_box.include_box(make_sig_box(sig))
-	for box_pair in outer_box.inner_boxes:
-		box_pair[1] = box_pair[0].text
+		outer_box.text += 1
+#	for box_pair in outer_box.inner_boxes:
+#		box_pair[1] = box_pair[0].text
 	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
                             size = ("1000px", "1000px"))
+	g_boxes = []
+	box_param = 1000/outer_box.text # number of vertical pixels / number of signatures to represent
 	for box in outer_box.inner_boxes:
-
-		if box[0].inner_boxes != []:
+		g_boxes.append(graphics_box(box[0], svg_document, \
+			(box[1] * (box_param), 100), (800, box_param - FONT_SIZE)))
 
 if __name__ = "__main__":
-	main(sys.argv[1], sys.argv[2])
+	main(sys.argv[1])
 
 # recursion
 	'''
