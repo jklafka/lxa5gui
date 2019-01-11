@@ -34,8 +34,8 @@ class data_box(object):
 
 	def sort(self, crit, reverse_tf = False):
 		'''
-		Sort the inner_boxes according to criterion crit, in reverse if 
-		reverse_tf is True. 
+		[Currently not in use] Sort the inner_boxes according to criterion 
+		crit, in reverse if reverse_tf is True. 
 		'''
 		if self.my_type == "stack" and self.text is None: #is outer_box
 			if crit == "suffixes":
@@ -48,6 +48,9 @@ class data_box(object):
 
 
 	def filter(self, crit, level):
+		'''
+		Filter the inner_boxes according to criterion crit and condition level.
+		'''
 		if self.my_type == "stack" and self.text is None: #is outer_box
 			if crit == "suffixes":
 				self.inner_boxes = [box for box in self.inner_boxes \
@@ -81,7 +84,8 @@ class graphics_box(object):
 			num_inner = len(data_box.inner_boxes)
 			for inner_box in data_box.inner_boxes:
 				self._inner_boxes.append(graphics_box(inner_box[0], svg, \
-					((upper_left[0] + BASE_SIZE) + (box_size[0] /  num_inner) * i, upper_left[1] + BASE_SIZE), \
+					((upper_left[0] + BASE_SIZE) + (box_size[0] /  num_inner) * i, \
+						upper_left[1] + BASE_SIZE), \
 					((box_size[0] / num_inner) -  2 * BASE_SIZE, box_size[1] -  2 * BASE_SIZE)))
 				i += 1
 		else:
@@ -163,6 +167,9 @@ def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=100):
 	for key, val in signatures.items():
 		outer_box.include_box(make_sig_box(key, val))
 		outer_box.text += 1
+
+	if filter_crit is not "None":
+		filter_list = filter_crit.split('=')
 
 	if sort_crit is not None: 
 		if sort_crit == "robustness":
