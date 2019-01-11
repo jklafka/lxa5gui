@@ -1,7 +1,9 @@
 import svgwrite
 import sys
-import crab_nebula_klafka
+import gui_crab_nebula
 import subprocess
+import math
+import numpy as np
 
 FONT_SIZE = 12
 
@@ -79,16 +81,24 @@ class graphics_box(object):
 		self.data_box = data_box
 		self.draw_box(self._svg, upper_left, box_size)
 		if self.data_box.inner_boxes != []:
+			i = 0
+			num_inner = len(data_box.inner_boxes)
 			for inner_box in data_box.inner_boxes:
 				self._inner_boxes.append(graphics_box(inner_box[0], svg, \
-					(upper_left[0] + FONT_SIZE, upper_left[1] + FONT_SIZE), \
-					(box_size[0] - FONT_SIZE, box_size[1] - FONT_SIZE)))
+					((upper_left[0] + FONT_SIZE) + (box_size[0] /  num_inner) * i, upper_left[1] + FONT_SIZE), \
+					((box_size[0] / num_inner) -  2 *FONT_SIZE, box_size[1] -  2 * FONT_SIZE)))
+				i += 1
 		else:
-			self.add_text(self.data_box.text, (upper_left[0] + box_size[0] / 2, ))
+			words_list = []
+			for num in np.random.randint(0, len(self.data_box.text), 5):
+				words_list.append(self.data_box.text[num])
+
+			self.add_text(words_list, \
+				(upper_left[0] + 2 * FONT_SIZE, upper_left[1] + box_size[1] / 2)) 
 
 
 	def draw_box(self, svg, upper_left, box_size): ##make sure the syntax is right for this
-		svg.add(svg.rect(insert = str(upper_left[0]) + "px",
+		svg.add(svg.rect(insert = upper_left,
                                    size = box_size,
                                    stroke_width = "5",
                                    stroke = "black",
@@ -119,10 +129,10 @@ def get_robustness(stem_box, suffix_box, num_stems, num_suffixes):
 	return n2 - num_letters
 
 
-def make_sig_box(signature):
+def make_sig_box(key, val):
 	sig_box = data_box("row", None)
-	stem_box = data_box("stack", list(signatures.values()))
-	suffix_box = data_box("stack", list(signatures.keys()))
+	stem_box = data_box("stack", list(val))
+	suffix_box = data_box("stack", list(key))
 	num_stems = len(stem_box.text)
 	num_suffixes = len(suffix_box.text)
 	sig_box.include_box(stem_box)
@@ -133,41 +143,21 @@ def make_sig_box(signature):
 
 
 def main(signatures_filename):
-	signatures = crab_nebula_klafka.main(signatures_filename) # dict maps suffixes to stems
+	signatures = gui_crab_nebula.main(signatures_filename) # dict maps suffixes to stems
 	outer_box = data_box("stack", None)
 	outer_box.text = 0
-	for sig in signatures:
-		outer_box.include_box(make_sig_box(sig))
+	for key, val in signatures.items():
+		outer_box.include_box(make_sig_box(key, val))
 		outer_box.text += 1
 #	for box_pair in outer_box.inner_boxes:
 #		box_pair[1] = box_pair[0].text
 	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
-                            size = ("1000px", "1000px"))
-	g_boxes = []
-	box_param = 1000/outer_box.text # number of vertical pixels / number of signatures to represent
+                            size = (1000, outer_box.text * (100 + FONT_SIZE) - 300))
+	box_param = 100 #math.ceil(1000/outer_box.text)
 	for box in outer_box.inner_boxes:
-		g_boxes.append(graphics_box(box[0], svg_document, \
-			(box[1] * (box_param), 100), (800, box_param - FONT_SIZE)))
+		graphics_box(box[0], svg_document, \
+			(100, box[1] * box_param), (800, box_param - FONT_SIZE))
+	svg_document.save()
 
-if __name__ = "__main__":
+if __name__ == "__main__":
 	main(sys.argv[1])
-
-# recursion
-	'''
-	suff_dict = {}
-	stem_dict = {}
-	stem_str = ""
-	iden = 0
-	for suffixes, stems in signatures.items():
-		suff_dict[suffixes] = iden
-		for stem in stems: 
-			stem_dict[stem] = iden
-			stem_str += stem
-			stem_str += " "
-		iden += 1
-	file = open("stems.txt", 'w')
-	file.write(stem_str)
-	file.close()
-	stem_sigs = crab_nebula_klafka.main("stems.txt")
-	#subprocess.call(["rm", "stems.txt"])
-	'''

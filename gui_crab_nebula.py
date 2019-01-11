@@ -46,8 +46,8 @@ def main(INPUT_FILE):
     
     # Build a parser and run it...
     parser = build_parser(word_counts, signatures, stems, suffixes)
-    for word in word_counts:
-        print(word, parser[word][0].stem, parser[word][0].suffix)
+    #for word in word_counts:
+    #    print(word, parser[word][0].stem, parser[word][0].suffix)
 
     # Build sig-tree.
     sig_tree = build_sig_tree(signatures)
