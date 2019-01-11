@@ -5,7 +5,7 @@ import subprocess
 import math
 import numpy as np
 
-FONT_SIZE = 12
+BASE_SIZE = 12
 
 
 class data_box(object):
@@ -23,12 +23,20 @@ class data_box(object):
 
 
 	def include_box(self, inner_box):
+		'''
+		Adds an additional inner_box under data_box paired with how
+		many inner boxes were added previously. 
+		'''
 		self._num_inner += 1
 		self.inner_boxes.append([inner_box, self._num_inner])
 		return 
 
 
 	def sort(self, crit, reverse_tf = False):
+		'''
+		Sort the inner_boxes according to criterion crit, in reverse if 
+		reverse_tf is True. 
+		'''
 		if self.my_type == "stack" and self.text is None: #is outer_box
 			if crit == "suffixes":
 				self.inner_boxes.sort(lambda x: x[0].text[1], reverse = reverse_tf)
@@ -55,18 +63,6 @@ class data_box(object):
 					if suffix in box[0].inner_boxes[1][0] for suffix in level]
 		return
 
-		## filter by whether the signature contains certain suffixes
-
-"""
-	def delete_inner_box(self, box_name):
-		'''
-		Given the name of an inner box (a box that lives inside the data_box, 
-		deletes that box from the list of inner_boxes.
-		'''
-		self._inner_boxes = [item for item in self._inner_boxes \
-			if item[0].name != box_name]
-		return
-"""
 
 class graphics_box(object):
 	"""
@@ -85,19 +81,23 @@ class graphics_box(object):
 			num_inner = len(data_box.inner_boxes)
 			for inner_box in data_box.inner_boxes:
 				self._inner_boxes.append(graphics_box(inner_box[0], svg, \
-					((upper_left[0] + FONT_SIZE) + (box_size[0] /  num_inner) * i, upper_left[1] + FONT_SIZE), \
-					((box_size[0] / num_inner) -  2 *FONT_SIZE, box_size[1] -  2 * FONT_SIZE)))
+					((upper_left[0] + BASE_SIZE) + (box_size[0] /  num_inner) * i, upper_left[1] + BASE_SIZE), \
+					((box_size[0] / num_inner) -  2 * BASE_SIZE, box_size[1] -  2 * BASE_SIZE)))
 				i += 1
 		else:
 			words_list = []
-			for num in np.random.randint(0, len(self.data_box.text), 5):
+			for num in np.random.randint(0, len(self.data_box.text), \
+					min(5, len(self.data_box.text) - 1)):
 				words_list.append(self.data_box.text[num])
+			self.add_text(self._svg, words_list, \
+				(upper_left[0] + 2 * BASE_SIZE, upper_left[1] + box_size[1] / 2)) 
 
-			self.add_text(words_list, \
-				(upper_left[0] + 2 * FONT_SIZE, upper_left[1] + box_size[1] / 2)) 
 
-
-	def draw_box(self, svg, upper_left, box_size): ##make sure the syntax is right for this
+	def draw_box(self, svg, upper_left, box_size): 
+		'''
+		Draw box of size box_size in pixels with upper left corner located
+		at coordinates upper_left in pixels on canvas svg. 
+		'''
 		svg.add(svg.rect(insert = upper_left,
                                    size = box_size,
                                    stroke_width = "5",
@@ -105,15 +105,19 @@ class graphics_box(object):
                                    fill = "rgb(128,0,0)"))
 
 
-	def add_text(self, text, location):
-		self._svg.add(self._svg.text(text, \
-	                                   insert = location))
-		## add code to check whether the text will overfill the box
+	def add_text(self, svg, text, location):
+		'''
+		Draw text at location in pixels on canvas svg. 
+		'''
+		svg.add(svg.text(text, insert = location))
 
-	#def zoom(self, percentage):
-	## still have to implement
 
 def get_robustness(stem_box, suffix_box, num_stems, num_suffixes):
+	'''
+	Compute the robustness of a signature data_box with stems in stem_box, 
+	suffixes in suffix_box, number of stems num_stems and number of suffixes
+	num_suffixes. 
+	'''
 	n0 = 0
 	n1 = 0
 	num_letters = 0
@@ -129,10 +133,15 @@ def get_robustness(stem_box, suffix_box, num_stems, num_suffixes):
 	return n2 - num_letters
 
 
-def make_sig_box(key, val):
+def make_sig_box(suffixes, stems):
+	'''
+	Given a tuple of stems and a tuple of suffixes, 
+	create a data_box with a data_box containing the stems
+	and a data_box containing the suffixes as inner_boxes. 
+	'''
 	sig_box = data_box("row", None)
-	stem_box = data_box("stack", list(val))
-	suffix_box = data_box("stack", list(key))
+	stem_box = data_box("stack", list(stems))
+	suffix_box = data_box("stack", list(suffixes))
 	num_stems = len(stem_box.text)
 	num_suffixes = len(suffix_box.text)
 	sig_box.include_box(stem_box)
@@ -142,22 +151,41 @@ def make_sig_box(key, val):
 	return sig_box
 
 
-def main(signatures_filename):
+def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=1):
+	'''
+	Construct the data_boxes and their graphical graphics_box representations. 
+	Then draw the graphics_boxes on an SVG image.
+	'''
+	zoom = int(zoom)
 	signatures = gui_crab_nebula.main(signatures_filename) # dict maps suffixes to stems
 	outer_box = data_box("stack", None)
 	outer_box.text = 0
 	for key, val in signatures.items():
 		outer_box.include_box(make_sig_box(key, val))
 		outer_box.text += 1
-#	for box_pair in outer_box.inner_boxes:
-#		box_pair[1] = box_pair[0].text
+
+	if sort_crit is not None: 
+		if sort_crit == "robustness":
+			outer_box.inner_boxes.sort(lambda x : x[0].text[2])
+		elif sort_crit == "stems":
+			outer_box.inner_boxes.sort(lambda x : x[0].text[0])
+		elif sort_crit == "suffixes":
+			outer_box.inner_boxes.sort(lambda x : x[0].text[1])		
+
 	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
-                            size = (1000, outer_box.text * (100 + FONT_SIZE) - 300))
+                            size = (1000 * zoom, \
+                            (outer_box.text * (100 + BASE_SIZE) - 300) * zoom),
+                            style="font-size:{}".format(16 * zoom))
 	box_param = 100 #math.ceil(1000/outer_box.text)
 	for box in outer_box.inner_boxes:
 		graphics_box(box[0], svg_document, \
-			(100, box[1] * box_param), (800, box_param - FONT_SIZE))
+			(100 * zoom, zoom * (box[1] * box_param)), \
+			(800 * zoom, zoom * (box_param - BASE_SIZE)))
 	svg_document.save()
 
+
 if __name__ == "__main__":
-	main(sys.argv[1])
+	if len(sys.argv) > 2:
+		main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+	else:
+		main(sys.argv[1])
