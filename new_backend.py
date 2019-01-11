@@ -151,12 +151,12 @@ def make_sig_box(suffixes, stems):
 	return sig_box
 
 
-def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=1):
+def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=100):
 	'''
 	Construct the data_boxes and their graphical graphics_box representations. 
 	Then draw the graphics_boxes on an SVG image.
 	'''
-	zoom = int(zoom)
+	zoom = float(zoom/100)
 	signatures = gui_crab_nebula.main(signatures_filename) # dict maps suffixes to stems
 	outer_box = data_box("stack", None)
 	outer_box.text = 0
