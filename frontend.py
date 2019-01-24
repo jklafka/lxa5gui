@@ -33,27 +33,41 @@ master = Tk()
 
 # Sorting
 var1 = IntVar()
-Checkbutton(master, text="Sorting?", variable=var1).grid(row=2, sticky=W)
-Label(master, text="Suffix").grid(row=3, column=0)
-Label(master, text="Stem").grid(row=3, column=2)
-e2 = Entry(master)
-e3 = Entry(master)
-e2.grid(row=3, column=1)
-e3.grid(row=3, column=3)
+Checkbutton(master, text="Sort by stems?", variable=var1)\
+    .grid(row=2, column=0, sticky=W)
+var2 = IntVar()
+Checkbutton(master, text="Sort by suffixes?", variable=var2)\
+    .grid(row=2, column=1, sticky=W)
+var3 = IntVar()
+Checkbutton(master, text="Sort by robustness?", variable=var3)\
+    .grid(row=2, column=2, sticky=W)
 if var1.get() == 1:
-    params["sort_crit"] = e2.get()
+    params["sort_crit"] = "stems"
+if var2.get() == 1:
+    params["sort_crit"] = "suffixes"
+if var3.get() == 1:
+    params["sort_crit"] = "robustness"
+
 
 # Filtering
-var2 = IntVar()
-Checkbutton(master, text="Filtering?", variable=var2).grid(row=4, sticky=W)
+var4 = IntVar()
+Checkbutton(master, text="Filter?", variable=var4).grid(row=4, sticky=W)
 e4 = Entry(master)
 e5 = Entry(master)
+Label(master, text="Suffix").grid(row=5, column=0)
+Label(master, text="Stem").grid(row=5, column=2)
 e4.grid(row=5, column=1)
 e5.grid(row=5, column=3)
-if var2.get() == 1:
-    params["filter_crit"] = e4.get()
+if var4.get() == 1:
+    if e4.get():
+        params["filter_crit"] = e4.get()
+    elif e5.get():
+        params["filter_crit"] = e5.get()
 
-## implement zooming
+# Label(master, text="Zoom").grid(row=6, column=0)
+# e6 = Entry(master)
+# e6.grid(row=6, column=1)
+# params["zoom"] = e6.get()
 
 Button(master, text = "Filename", command=query_filename).grid(row = 1, \
     column = 0, sticky = W)
@@ -61,6 +75,5 @@ Button(master, text='Quit', command=master.quit).grid(row=10, column=0, \
     sticky=W, pady=4)
 Button(master, text='Run', command=lambda : run_crab_nebula(params)).\
     grid(row=10, column=1, sticky=W, pady=4)
-
 
 mainloop()
