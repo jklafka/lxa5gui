@@ -1,0 +1,10 @@
+@article{kuperman2010effect,
+  title={The effect of word position on eye-movements in sentence and paragraph reading},
+  author={Kuperman, Victor and Dambacher, Michael and Nuthmann, Antje and Kliegl, Reinhold},
+  journal={The Quarterly Journal of Experimental Psychology},
+  volume={63},
+  number={9},
+  pages={1838--1857},
+  year={2010},
+  publisher={Taylor \& Francis}
+}

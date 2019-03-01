@@ -41,6 +41,8 @@ Checkbutton(master, text="Sort by suffixes?", variable=var2)\
 var3 = IntVar()
 Checkbutton(master, text="Sort by robustness?", variable=var3)\
     .grid(row=2, column=2, sticky=W)
+
+## move all of this checking to functions
 if var1.get() == 1:
     params["sort_crit"] = "stems"
 if var2.get() == 1:
@@ -51,18 +53,16 @@ if var3.get() == 1:
 
 # Filtering
 var4 = IntVar()
-Checkbutton(master, text="Filter?", variable=var4).grid(row=4, sticky=W)
+Label(master, text="Filters").grid(row=4, column = 0)
 e4 = Entry(master)
 e5 = Entry(master)
 Label(master, text="Suffix").grid(row=5, column=0)
 Label(master, text="Stem").grid(row=5, column=2)
 e4.grid(row=5, column=1)
 e5.grid(row=5, column=3)
-if var4.get() == 1:
-    if e4.get():
-        params["filter_crit"] = e4.get()
-    elif e5.get():
-        params["filter_crit"] = e5.get()
+suff_filter = e4.get()
+stem_filter = e5.get()
+Label(master, text = "test").grid(row=4, column = 1)
 
 # Label(master, text="Zoom").grid(row=6, column=0)
 # e6 = Entry(master)
