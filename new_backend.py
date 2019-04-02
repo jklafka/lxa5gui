@@ -94,12 +94,18 @@ class graphics_box(object):
 				i += 1
 		else:
 			words_list = []
-			for num in np.random.randint(0, len(self.data_box.text), \
-					min(5, len(self.data_box.text) - 1)):
-				words_list.append(self.data_box.text[num])
+			if len(self.data_box.text) > 10:
+				m = np.random.randint(0, len(self.data_box.text), \
+					10)
+				for num in m:
+					words_list.append(self.data_box.text[num])
+			else:
+				for num in range(len(self.data_box.text)):
+					words_list.append(self.data_box.text[num])
+			#check for overfill. If so use next line
 			self.add_text(self._svg, words_list, \
-				(upper_left[0] + 2 * BASE_SIZE, \
-				upper_left[1] + box_size[1] / 2))
+				(upper_left[0] + BASE_SIZE, \
+				upper_left[1] + box_size[1] / 4), box_size[1])
 
 
 	def draw_box(self, svg, upper_left, box_size):
@@ -114,11 +120,30 @@ class graphics_box(object):
                                    fill = "rgb(128,0,0)"))
 
 
-	def add_text(self, svg, text, location):
+	def add_text(self, svg, text, location, box_len):
 		'''
 		Draw text at location in pixels on canvas svg.
 		'''
-		svg.add(svg.text(text, insert = location))
+		if text[0] == "":
+			textstr = "∅"
+		else:
+			textstr = text[0]
+		textstr2 = ""
+		for word in text[1:]:
+			if len(textstr) > 50:
+				if textstr[-2:] == ", ":
+					textstr2 += ", "
+					textstr2 += word
+				else:
+					textstr += ", "
+					textstr2 += word
+			else:
+				textstr += ", "
+				textstr += word
+		svg.add(svg.text(textstr, insert = location))
+		if textstr2 != "":
+			svg.add(svg.text(textstr2, insert = (location[0], location[1] + \
+				BASE_SIZE * 2)))
 
 
 def get_robustness(stem_box, suffix_box, num_stems, num_suffixes):
@@ -160,7 +185,7 @@ def make_sig_box(suffixes, stems):
 	return sig_box
 
 
-def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=100):
+def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=1):
 	'''
 	Construct the data_boxes and their graphical graphics_box representations.
 	Then draw the graphics_boxes on an SVG image.
@@ -186,13 +211,13 @@ def main(signatures_filename, sort_crit=None, filter_crit=None, zoom=100):
 			box_pair[1] = j
 			j += 1
 
-	if sort_crit is not None:
-		if sort_crit == "robustness":
-			outer_box.inner_boxes.sort(key=lambda x : x[0].text[2])
-		elif sort_crit == "stems":
-			outer_box.inner_boxes.sort(key=lambda x : x[0].text[0])
-		elif sort_crit == "suffixes":
-			outer_box.inner_boxes.sort(key=lambda x : x[0].text[1])
+	if sort_crit == "robustness":
+		outer_box.inner_boxes.sort(key=lambda x : x[0].text[2])
+	elif sort_crit == "stems":
+		outer_box.inner_boxes.sort(key=lambda x : x[0].text[0])
+	elif sort_crit == "suffixes":
+		outer_box.inner_boxes.sort(key=lambda x : x[0].text[1])
+
 
 	svg_document = svgwrite.Drawing(filename = "crab_nebula.svg",
                             size = (1000 * zoom, \
